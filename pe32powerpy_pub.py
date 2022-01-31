@@ -37,9 +37,10 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
     async def _publish(self, pos_act, neg_act, inst_pwr):
         inst_solar_pwr = await self.get_sunspec_power()
         assert inst_pwr.unit == inst_solar_pwr.unit, (inst_pwr, inst_solar_pwr)
-        inst_cons_pwr = inst_solar_pwr.__class__(
+        inst_cons_pwr = inst_solar_pwr.__class__.with_unit(
             inst_solar_pwr + inst_pwr, inst_solar_pwr.unit)
         assert inst_cons_pwr >= 0, (inst_pwr, inst_solar_pwr, inst_cons_pwr)
+
         log.debug(
             f'_publish: 1.8.0 {pos_act}, 2.8.0 {neg_act}, '
             f'16.7.0 {inst_pwr}, '
