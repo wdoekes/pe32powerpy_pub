@@ -1,0 +1,6 @@
+[submodule "pe32me162irpy_pub"]
+	path = pe32me162irpy_pub
+	url = https://github.com/wdoekes/pe32me162irpy_pub
+[submodule "pe32sunspecpy_pub"]
+	path = pe32sunspecpy_pub
+	url = https://github.com/wdoekes/pe32sunspecpy_pub
