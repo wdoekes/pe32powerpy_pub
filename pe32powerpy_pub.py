@@ -28,9 +28,10 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
         self._sunspec_host_port = sunspec_host_port
 
     async def get_sunspec_power(self):
-        reader, writer = await asyncio.open_connection(self._sunspec_host_port)
+        reader, writer = await asyncio.open_connection(*self._sunspec_host_port)
         c = SunspecModbusTcpAsyncio(reader, writer)
         d = await c.get_from_mapping(SUNSPEC_INVERTER_MODEL_ONLY_AC_POWER)
+        writer.close()
         return d['I_AC_Power']
 
     async def _publish(self, pos_act, neg_act, inst_pwr):
