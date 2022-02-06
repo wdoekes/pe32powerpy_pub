@@ -10,7 +10,7 @@ from pe32sunspecpy_pub.pe32sunspecpy_pub import (
     SUNSPEC_INVERTER_MODEL_ONLY_AC_POWER, SunspecModbusTcpAsyncio)
 
 __version__ = 'pe32powerpy_pub-FIXME'
-    
+
 log = logging.getLogger()
 
 
@@ -28,14 +28,27 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
         self._sunspec_host_port = sunspec_host_port
 
     async def get_sunspec_power(self):
-        reader, writer = await asyncio.open_connection(*self._sunspec_host_port)
+        for i in (1, 2, 3):
+            try:
+                inst_solar_pwr = await self._get_sunspec_power()
+            except Exception:
+                if i == 3:
+                    raise
+                await asyncio.sleep(1)
+            else:
+                break
+        return inst_solar_pwr
+
+    async def _get_sunspec_power(self):
+        reader, writer = await asyncio.open_connection(
+            *self._sunspec_host_port)
         c = SunspecModbusTcpAsyncio(reader, writer)
         d = await c.get_from_mapping(SUNSPEC_INVERTER_MODEL_ONLY_AC_POWER)
         writer.close()
         return d['I_AC_Power']
 
     async def _publish(self, pos_act, neg_act, inst_pwr):
-        inst_solar_pwr = await self.get_sunspec_power()
+        inst_solar_pwr = await self._get_sunspec_power()
         assert inst_pwr.unit == inst_solar_pwr.unit, (inst_pwr, inst_solar_pwr)
         inst_cons_pwr = inst_solar_pwr.__class__.with_unit(
             inst_solar_pwr + inst_pwr, inst_solar_pwr.unit)
@@ -45,6 +58,11 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
             f'_publish: 1.8.0 {pos_act}, 2.8.0 {neg_act}, '
             f'16.7.0 {inst_pwr}, '
             f'S.O.L.A.R {inst_solar_pwr}, C.O.N.S {inst_cons_pwr}')
+        await self._publish_with_solar(
+            pos_act, neg_act, inst_pwr, inst_solar_pwr, inst_cons_pwr)
+
+    async def _publish_with_solar(
+            self, pos_act, neg_act, inst_pwr, inst_solar_pwr, inst_cons_pwr):
 
         tm = int(time.time())
         mqtt_string = (
@@ -57,7 +75,7 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
             f'dbg_uptime={tm}&'
             f'dbg_version={__version__}').encode('ascii')
 
-        await self._mqttc.publish(self._mqtt_topic, payload=mqtt_string)
+        await self._mqtt_publish(self._mqtt_topic, payload=mqtt_string)
 
         log.info(
             f'Published: 1.8.0 {pos_act}, 2.8.0 {neg_act}, '
