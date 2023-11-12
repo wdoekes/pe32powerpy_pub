@@ -58,7 +58,7 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
         avg = Decimal((pwr_cur + pwr_diff + pwr_diff) / 3)
         pwr_est = DecimalWithUnit.with_unit(
             avg.quantize(Decimal('.1')), pwr_cur.unit)
-        log.info(f'XXX, got {pwr_cur} and {pwr_diff} averaging to {pwr_est}')
+        log.debug(f'Solar: got {pwr_cur} & {pwr_diff}, avg is {pwr_est}')
         return pwr_est
 
     async def get_sunspec_power(self):
@@ -81,14 +81,11 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
         except AttributeError:
             pwr = await self.get_sunspec_power()
         else:
-            log.info(f'{t}, {self._power_by_diff_t}')
             td = (t - self._power_by_diff_t)
-            log.info(f'{energy}, {self._power_by_diff_energy}')
             energyd = (energy - self._power_by_diff_energy)
-            log.info(f'{energyd}, {td}')
             pwr = DecimalWithUnit.with_unit(
                 int(energyd * 3600 * 1000 / td), 'W')
-            log.info(f'{pwr}')
+            log.debug(f'Solar: t={t} td={td} energyd={energyd} pwr={pwr}')
 
         self._power_by_diff_t = t
         self._power_by_diff_energy = energy
