@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import asyncio
-import json
 import logging
 import os
 import sys
@@ -112,23 +111,8 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
         return d['I_AC_Power']
 
     async def _publish(self, pos_act, neg_act, inst_pwr):
-        # Very coarse grained values unfortunately :(
-        try:
-            with open('/run/pe32solaredge_scrape/latest.json') as fp:
-                values = json.load(fp)
-            if values['last_update'] + 3600 < time.time():
-                raise KeyError('latest.json is too old')
-            solar_act = DecimalWithUnit.with_unit(
-                int(values['solar_act']), pos_act.unit)
-            inst_solar_pwr = DecimalWithUnit.with_unit(
-                int(values['inst_solar_pwr']), inst_pwr.unit)
-            del values
-        except (FileNotFoundError, KeyError) as e:
-            log.error('no coarse grained fallback values (%r, %s)', e, e)
-            solar_act = None  # None instead of 0 if we have no values..
-            inst_solar_pwr = DecimalWithUnit.with_unit(
-                max(-inst_pwr, 0), inst_pwr.unit)
-
+        # Get current solar power at this exact point in time.
+        # That way we can plot a graph with all relevant data points at once.
         try:
             inst_solar_pwr = await self.get_sunspec_power_estimate()
         except ConnectionRefusedError as e:
@@ -151,25 +135,19 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
 
         log.debug(
             f'_publish: 1.8.0 {pos_act}, 2.8.0 {neg_act}, '
-            f'solar_act {solar_act}, '
             f'16.7.0 {inst_pwr}, '
             f'S.O.L.A.R {inst_solar_pwr}, C.O.N.S {inst_cons_pwr}')
         await self._publish_with_solar(
-            pos_act, neg_act, solar_act, inst_pwr, inst_solar_pwr,
-            inst_cons_pwr)
+            pos_act, neg_act, inst_pwr, inst_solar_pwr, inst_cons_pwr)
 
     async def _publish_with_solar(
-            self, pos_act, neg_act, solar_act,
-            inst_pwr, inst_solar_pwr, inst_cons_pwr):
+            self, pos_act, neg_act, inst_pwr, inst_solar_pwr, inst_cons_pwr):
 
         tm = int(time.time())
-        solar_act_if_available = (
-            f's_act_energy_wh={int(solar_act)}&' if solar_act else '')
         mqtt_string = (
             f'device_id={self._guid}&'
             f'e_pos_act_energy_wh={int(pos_act)}&'
             f'e_neg_act_energy_wh={int(neg_act)}&'
-            f'{solar_act_if_available}'
             f'e_inst_power_w={int(inst_pwr)}&'
             f's_inst_power_w={int(inst_solar_pwr)}&'
             f'c_inst_power_w={int(inst_cons_pwr)}&'
