@@ -75,3 +75,32 @@ https://medium.com/swlh/make-your-raspberry-pi-file-system-read-only-raspbian-bu
     done
 
     true
+
+::
+
+    diff --git a/dhcp/dhclient.conf b/dhcp/dhclient.conf
+    index b85301b..218919c 100644
+    --- a/dhcp/dhclient.conf
+    +++ b/dhcp/dhclient.conf
+    @@ -22,6 +22,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
+     #send dhcp-client-identifier 1:0:a0:24:ab:fb:9c;
+     #send dhcp-lease-time 3600;
+     #supersede domain-name "fugue.com home.vix.com";
+    +append domain-name-servers 1.1.1.1, 8.8.8.8;
+     #prepend domain-name-servers 127.0.0.1;
+     #require subnet-mask, domain-name-servers;
+     #timeout 60;
+    diff --git a/resolv.conf b/resolv.conf
+    deleted file mode 100644
+    index 87af862..0000000
+    --- a/resolv.conf
+    +++ /dev/null
+    @@ -1 +0,0 @@
+    -nameserver SOMETHING
+    diff --git a/resolv.conf b/resolv.conf
+    new file mode 120000
+    index 0000000..c0b2e5e
+    --- /dev/null
+    +++ b/resolv.conf
+    @@ -0,0 +1 @@
+    +/run/resolv.conf
