@@ -115,9 +115,11 @@ class Pe32Me162SunspecPublisher(Pe32Me162Publisher):
         except ConnectionRefusedError as e:
             # [Errno 111] Connect call failed ('1.2.3.4', 1502)
             log.error('connection refused, only poor values (%r, %s)', e, e)
+            inst_solar_pwr = DecimalWithUnit.with_unit(0, 'W')
         except OSError as e:
             # [Errno 113] Connect call failed ('1.2.3.4', 1502)
             log.error('connection timeout, only poor values (%r, %s)', e, e)
+            inst_solar_pwr = DecimalWithUnit.with_unit(0, 'W')
 
         # Check and fix up values.
         assert inst_pwr.unit == inst_solar_pwr.unit, (inst_pwr, inst_solar_pwr)
